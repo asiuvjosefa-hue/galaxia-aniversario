@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxia de Aniversario</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        .header-title {
+            position: absolute;
+            top: 25px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .header-title h1 {
+            color: #ffffff;
+            font-size: 1.6rem;
+            margin: 0;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(255,105,180,0.8);
+        }
+        .header-title p {
+            color: #ff99cc;
+            font-size: 0.85rem;
+            margin: 5px 0 0 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Modal romántico corregido */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: rgba(25, 12, 28, 0.95);
+            border: 2px solid #ff69b4;
+            border-radius: 20px;
+            padding: 22px;
+            width: 82%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+            transform: scale(0.85);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-card .icon-heart {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        .modal-card h3 {
+            margin: 0;
+            color: #ff69b4;
+            font-size: 1.3rem;
+        }
+
+        .modal-card p {
+            color: #f0f0f0;
+            font-size: 0.95rem;
+            margin: 12px 0 20px 0;
+            line-height: 1.4;
+        }
+
+        .modal-btn {
+            background: linear-gradient(45deg, #ff2a85, #ff69b4);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(255, 42, 133, 0.6);
+            margin: 0 4px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #aaa;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .signature {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.7rem;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">
+        <h1>Una Galaxia de Amor para Ti</h1>
+        <p>Feliz Aniversario, Mi Vida</p>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Modal con mensajes e íconos interactivos -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal-card">
+            <span class="close-btn" onclick="closeModal()">✕</span>
+            <div id="modal-icon" class="icon-heart">💖</div>
+            <h3 id="modal-title">¡Feliz Aniversario!</h3>
+            <p id="modal-text">Gracias por ser mi lugar seguro y llenar cada uno de mis días de momentos mágicos.</p>
+            <button class="modal-btn" onclick="nextMessage(event)">Siguiente ❤️</button>
+        </div>
+    </div>
+
+    <div class="signature">Creado por Bequer</div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const galaxyGroup = new THREE.Group();
+        scene.add(galaxyGroup);
+
+        // Galaxia de partículas
+        const particleCount = 2800;
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const colors = [];
+
+        const colorInside = new THREE.Color('#ff007f');
+        const colorOutside = new THREE.Color('#4a00e0');
+
+        for (let i = 0; i < particleCount; i++) {
+            const radius = Math.random() * 18;
+            const spinAngle = radius * 0.4;
+            const branchAngle = ((i % 3) * Math.PI * 2) / 3;
+
+            const x = Math.cos(branchAngle + spinAngle) * radius + (Math.random() - 0.5) * 1.5;
+            const y = (Math.random() - 0.5) * 0.8;
+            const z = Math.sin(branchAngle + spinAngle) * radius + (Math.random() - 0.5) * 1.5;
+
+            positions.push(x, y, z);
+
+            const mixedColor = colorInside.clone();
+            mixedColor.lerp(colorOutside, radius / 18);
+            colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 0.13,
+            vertexColors: true,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            opacity: 0.85
+        });
+
+        const particleSystem = new THREE.Points(geometry, particleMaterial);
+        galaxyGroup.add(particleSystem);
+
+        // Corazón en 3D
+        const heartPoints = [];
+        for (let t = 0; t < Math.PI * 2; t += 0.04) {
+            const hx = 16 * Math.pow(Math.sin(t), 3);
+            const hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+            heartPoints.push(new THREE.Vector3(hx * 0.18, hy * 0.18 + 2.5, (Math.random() - 0.5) * 0.6));
+        }
+        
+        const heartGeometry = new THREE.BufferGeometry().setFromPoints(heartPoints);
+        const heartMaterial = new THREE.PointsMaterial({ color: 0xff69b4, size: 0.35 });
+        const heartSystem = new THREE.Points(heartGeometry, heartMaterial);
+        galaxyGroup.add(heartSystem);
+
+        // Frases flotantes múltiples
+        const phrases = [
+            "FELIZ ANIVERSARIO", "ERES LA MEJOR", "LA MÁS LINDA", 
+            "AMOR DE MI VIDA", "TE ADORO", "ERES MAGIA", 
+            "MI AMOR ETERNO", "PARA SIEMPRE", "MI PERSONA FAVORITA",
+            "NUESTRO UNIVERSO", "SUEÑO HECHO REALIDAD"
+        ];
+
+        function createTextSprite(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'Bold 40px sans-serif';
+            ctx.fillStyle = '#ffb6c1';
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 12;
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 256, 70);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(4, 1, 1);
+            return sprite;
+        }
+
+        phrases.forEach((phrase, index) => {
+            const sprite = createTextSprite(phrase);
+            const angle = (index / phrases.length) * Math.PI * 2;
+            const dist = 6 + Math.random() * 7;
+            sprite.position.x = Math.cos(angle) * dist;
+            sprite.position.z = Math.sin(angle) * dist;
+            sprite.position.y = (Math.random() - 0.5) * 3;
+            galaxyGroup.add(sprite);
+        });
+
+        // 6 Mensajes interactivos románticos
+        const messages = [
+            { 
+                icon: "💖", 
+                title: "¡Feliz Aniversario!", 
+                text: "Gracias por este tiempo tan hermoso juntos. Eres el mejor regalo que la vida me ha dado." 
+            },
+            { 
+                icon: "👑", 
+                title: "Eres la más linda", 
+                text: "No existe sonrisa más hermosa en todo este universo que la tuya. Me fascinas cada día más." 
+            },
+            { 
+                icon: "🌸", 
+                title: "Eres la mejor", 
+                text: "Adoro tu ternura, tu forma de apoyarme y todo el amor que me entregas sin condición." 
+            },
+            { 
+                icon: "✨", 
+                title: "Mi lugar seguro", 
+                text: "A tu lado siento que todo es posible. Gracias por construir nuestro propio mundo juntos." 
+            },
+            { 
+                icon: "💌", 
+                title: "Mi amor eterno", 
+                text: "Cada latido de mi corazón lleva tu nombre. Eres y siempre serás mi persona favorita." 
+            },
+            { 
+                icon: "💍", 
+                title: "Para Siempre", 
+                text: "No importa cuántos años pasen, siempre te volvería a elegir a ti una y mil veces." 
+            }
+        ];
+
+        let msgIndex = 0;
+
+        function updateModalContent() {
+            const current = messages[msgIndex];
+            document.getElementById('modal-icon').innerText = current.icon;
+            document.getElementById('modal-title').innerText = current.title;
+            document.getElementById('modal-text').innerText = current.text;
+        }
+
+        function openModal() {
+            updateModalContent();
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function nextMessage(e) {
+            e.stopPropagation();
+            msgIndex = (msgIndex + 1) % messages.length;
+            updateModalContent();
+        }
+
+        // Posición de la cámara inclinada
+        camera.position.set(0, 8, 20);
+        camera.lookAt(0, 1, 0);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            galaxyGroup.rotation.y += 0.004;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Al tocar la pantalla abre el modal interactivo
+        window.addEventListener('click', (e) => {
+            if (!document.getElementById('modal').classList.contains('active')) {
+                openModal();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+
